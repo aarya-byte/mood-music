@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoodTunes — AI Music for Your Emotions</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
+</style>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: rgba(255,255,255,0.07);
+    --text: #f0eeff;
+    --muted: #7a7a9a;
+    --accent: #a78bfa;
+    --accent2: #818cf8;
+    --glow: rgba(167,139,250,0.15);
+    --green: #34d399;
+    --red: #f87171;
+    --yellow: #fbbf24;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 10%, rgba(99,65,200,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 90%, rgba(79,109,220,0.1) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 60% 40%, rgba(167,139,250,0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .noise {
+    position: fixed;
+    inset: 0;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* Header */
+  header {
+    padding: 28px 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-family: 'Clash Display', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent);
+    animation: pulse-dot 2s ease infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { box-shadow: 0 0 12px var(--accent); transform: scale(1); }
+    50% { box-shadow: 0 0 20px var(--accent), 0 0 40px rgba(167,139,250,0.3); transform: scale(1.2); }
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 100px;
+    background: rgba(52,211,153,0.1);
+    border: 1px solid rgba(52,211,153,0.2);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--green);
+  }
+
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse-dot 2s ease infinite; }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    padding: 64px 0 48px;
+  }
+
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 100px;
+    background: rgba(167,139,250,0.1);
+    border: 1px solid rgba(167,139,250,0.2);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+
+  h1 {
+    font-family: 'Clash Display', sans-serif;
+    font-size: clamp(42px, 7vw, 80px);
+    font-weight: 700;
+    line-height: 0.95;
+    letter-spacing: -2px;
+    margin-bottom: 20px;
+  }
+
+  h1 span {
+    background: linear-gradient(135deg, #a78bfa, #818cf8, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    font-size: 18px;
+    color: var(--muted);
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* Main Layout */
+  .app-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    padding-bottom: 80px;
+  }
+
+  @media (max-width: 768px) {
+    .app-layout { grid-template-columns: 1fr; }
+  }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    transition: border-color 0.3s ease;
+  }
+
+  .card:hover { border-color: rgba(167,139,250,0.2); }
+
+  .card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+
+  /* Webcam */
+  .webcam-wrap {
+    position: relative;
+    aspect-ratio: 4/3;
+    background: var(--surface2);
+    overflow: hidden;
+  }
+
+  #video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transform: scaleX(-1);
+  }
+
+  .webcam-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--surface2);
+  }
+
+  .webcam-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(167,139,250,0.1);
+    border: 1px solid rgba(167,139,250,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+
+  .webcam-label {
+    font-size: 14px;
+    color: var(--muted);
+    text-align: center;
+    padding: 0 32px;
+    line-height: 1.5;
+  }
+
+  /* Scan line animation */
+  .scan-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0;
+    animation: scan 2s ease-in-out infinite;
+  }
+
+  @keyframes scan {
+    0% { top: 0%; opacity: 0; }
+    10% { opacity: 0.7; }
+    90% { opacity: 0.7; }
+    100% { top: 100%; opacity: 0; }
+  }
+
+  /* Face detection box */
+  .face-box {
+    position: absolute;
+    border: 2px solid var(--accent);
+    border-radius: 4px;
+    box-shadow: 0 0 15px rgba(167,139,250,0.4);
+    top: 25%;
+    left: 30%;
+    width: 40%;
+    height: 50%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .face-box.visible { opacity: 1; }
+
+  .face-box::before, .face-box::after,
+  .face-box .corner-tl, .face-box .corner-br {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-color: var(--accent);
+    border-style: solid;
+  }
+  .face-box::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+  .face-box::after { top: -2px; right: -2px; border-width: 2px 2px 0 0; }
+  .face-box .corner-tl { bottom: -2px; left: -2px; border-width: 0 0 2px 2px; }
+  .face-box .corner-br { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+
+  /* Controls */
+  .controls { padding: 20px 24px; display: flex; gap: 12px; }
+
+  .btn {
+    flex: 1;
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    color: white;
+    box-shadow: 0 4px 20px rgba(124,58,237,0.3);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 28px rgba(124,58,237,0.4);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover {
+    background: rgba(167,139,250,0.1);
+    border-color: rgba(167,139,250,0.3);
+  }
+
+  /* Emotion Result */
+  .emotion-result {
+    padding: 20px 24px;
+    border-top: 1px solid var(--border);
+    display: none;
+  }
+
+  .emotion-result.visible { display: block; }
+
+  .emotion-main {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .emotion-emoji {
+    font-size: 40px;
+    width: 64px;
+    height: 64px;
+    background: var(--surface2);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+  }
+
+  .emotion-name {
+    font-family: 'Clash Display', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    text-transform: capitalize;
+    letter-spacing: -0.5px;
+  }
+
+  .emotion-conf {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  /* Emotion bars */
+  .emotion-bars { display: flex; flex-direction: column; gap: 8px; }
+
+  .emotion-bar-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 36px;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .emotion-bar-label {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: capitalize;
+  }
+
+  .emotion-bar-track {
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+
+  .emotion-bar-fill {
+    height: 100%;
+    border-radius: 100px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 0%;
+  }
+
+  .emotion-bar-val {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  /* Recommendations Panel */
+  .recs-panel { display: flex; flex-direction: column; }
+
+  .recs-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .recs-mood-tag {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 500;
+    background: rgba(167,139,250,0.1);
+    border: 1px solid rgba(167,139,250,0.2);
+    color: var(--accent);
+  }
+
+  .recs-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    gap: 16px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .recs-empty-icon {
+    font-size: 48px;
+    opacity: 0.4;
+  }
+
+  .recs-empty-text { font-size: 14px; line-height: 1.6; }
+
+  /* Track list */
+  .track-list { flex: 1; overflow-y: auto; max-height: 600px; }
+
+  .track-item {
+    display: grid;
+    grid-template-columns: 48px 1fr auto;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s ease;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .track-item:hover { background: rgba(167,139,250,0.05); }
+  .track-item:last-child { border-bottom: none; }
+
+  .track-num {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .track-item:hover .track-num { display: none; }
+
+  .track-play {
+    display: none;
+    font-size: 16px;
+    text-align: center;
+  }
+
+  .track-item:hover .track-play { display: block; }
+
+  .track-art {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--surface2);
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .track-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .track-info { min-width: 0; }
+
+  .track-name {
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 3px;
+  }
+
+  .track-artist {
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .track-duration {
+    font-size: 12px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* Spotify badge */
+  .spotify-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    background: rgba(30,215,96,0.1);
+    border: 1px solid rgba(30,215,96,0.2);
+    font-size: 11px;
+    font-weight: 600;
+    color: #1ED760;
+    text-decoration: none;
+  }
+
+  /* Loading spinner */
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 14px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    transition: transform 0.3s ease;
+    z-index: 100;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Loading overlay for recs */
+  .loading-recs {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    gap: 16px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .loading-recs.visible { display: flex; }
+  .loading-recs .spinner { width: 28px; height: 28px; border-width: 3px; border-top-color: var(--accent); }
+
+  /* Scrollbar */
+  .track-list::-webkit-scrollbar { width: 4px; }
+  .track-list::-webkit-scrollbar-track { background: transparent; }
+  .track-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 100px; }
+
+  /* Entrance animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero { animation: fadeUp 0.6s ease; }
+  .card { animation: fadeUp 0.6s ease both; }
+  .card:nth-child(2) { animation-delay: 0.1s; }
+</style>
+</head>
+<body>
+
+<div class="noise"></div>
+
+<div class="container">
+  <header>
+    <div class="logo">
+      <div class="logo-dot"></div>
+      MoodTunes
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="status-badge">
+        <div class="status-dot"></div>
+        AI Active
+      </div>
+      <a href="https://open.spotify.com" target="_blank" class="spotify-badge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="#1ED760"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+        Spotify
+      </a>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span>✦</span> Powered by Computer Vision & Deep Learning
+    </div>
+    <h1>Music that feels<br><span>what you feel</span></h1>
+    <p class="hero-sub">Point your camera and let AI detect your emotion, then get Spotify tracks perfectly matched to your mood.</p>
+  </section>
+
+  <div class="app-layout">
+
+    <!-- Webcam & Detection Card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Emotion Detector</span>
+        <span id="detector-status" style="font-size:12px;color:var(--muted);">Camera off</span>
+      </div>
+
+      <div class="webcam-wrap">
+        <div class="webcam-overlay" id="webcam-overlay">
+          <div class="webcam-icon">📷</div>
+          <p class="webcam-label">Enable your camera to start detecting emotions in real time</p>
+        </div>
+        <video id="video" autoplay muted playsinline style="display:none;"></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+        <div class="scan-line" id="scan-line"></div>
+        <div class="face-box" id="face-box">
+          <div class="corner-tl"></div>
+          <div class="corner-br"></div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-primary" id="btn-camera">
+          <span>📷</span> Start Camera
+        </button>
+        <button class="btn btn-primary" id="btn-detect" disabled>
+          <span>🔍</span> Detect Mood
+        </button>
+      </div>
+
+      <div class="emotion-result" id="emotion-result">
+        <div class="emotion-main">
+          <div class="emotion-emoji" id="emotion-emoji">😐</div>
+          <div>
+            <div class="emotion-name" id="emotion-name">Neutral</div>
+            <div class="emotion-conf" id="emotion-conf">Confidence: —</div>
+          </div>
+        </div>
+        <div class="emotion-bars" id="emotion-bars"></div>
+      </div>
+    </div>
+
+    <!-- Recommendations Card -->
+    <div class="card recs-panel">
+      <div class="recs-header card-header">
+        <span class="card-title">Recommended Tracks</span>
+        <span class="recs-mood-tag" id="recs-mood-tag">🎵 Waiting...</span>
+      </div>
+
+      <div class="recs-empty" id="recs-empty">
+        <div class="recs-empty-icon">🎧</div>
+        <p class="recs-empty-text">Detect your emotion first,<br>then we'll find perfect music for you.</p>
+      </div>
+
+      <div class="loading-recs" id="loading-recs">
+        <div class="spinner"></div>
+        <span>Finding your vibe...</span>
+      </div>
+
+      <div class="track-list" id="track-list" style="display:none;"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const EMOTIONS_META = {
+  happy:    { emoji: '😄', color: '#FFD700', label: 'Happy & Uplifting 🎉' },
+  sad:      { emoji: '😢', color: '#4A90D9', label: 'Melancholic 💙' },
+  angry:    { emoji: '😠', color: '#FF4136', label: 'Intense & Powerful 🔥' },
+  fear:     { emoji: '😨', color: '#7B68EE', label: 'Calm & Soothing 🌙' },
+  surprise: { emoji: '😲', color: '#FF69B4', label: 'Exciting & Electric ⚡' },
+  neutral:  { emoji: '😐', color: '#2ECC71', label: 'Chill & Balanced 🎵' },
+  disgust:  { emoji: '😤', color: '#8B4513', label: 'Bluesy & Raw 🎸' },
+};
+
+let stream = null;
+let cameraOn = false;
+let currentEmotion = null;
+
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const btnCamera = document.getElementById('btn-camera');
+const btnDetect = document.getElementById('btn-detect');
+const overlay = document.getElementById('webcam-overlay');
+const scanLine = document.getElementById('scan-line');
+const faceBox = document.getElementById('face-box');
+const detectorStatus = document.getElementById('detector-status');
+
+// Toast
+function showToast(msg, duration = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// Camera toggle
+btnCamera.addEventListener('click', async () => {
+  if (cameraOn) {
+    stopCamera();
+  } else {
+    await startCamera();
+  }
+});
+
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: 'user' } });
+    video.srcObject = stream;
+    video.style.display = 'block';
+    overlay.style.display = 'none';
+    cameraOn = true;
+    btnCamera.innerHTML = '<span>⏹</span> Stop Camera';
+    btnCamera.style.background = 'linear-gradient(135deg,#dc2626,#b91c1c)';
+    btnDetect.disabled = false;
+    detectorStatus.textContent = 'Camera live';
+    detectorStatus.style.color = '#34d399';
+    scanLine.style.opacity = '1';
+    showToast('📷 Camera started! Click "Detect Mood" to analyze.');
+  } catch (e) {
+    showToast('❌ Could not access camera. Please allow permissions.');
+    console.error(e);
+  }
+}
+
+function stopCamera() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  video.style.display = 'none';
+  overlay.style.display = 'flex';
+  cameraOn = false;
+  btnCamera.innerHTML = '<span>📷</span> Start Camera';
+  btnCamera.style.background = '';
+  btnDetect.disabled = true;
+  detectorStatus.textContent = 'Camera off';
+  detectorStatus.style.color = '';
+  scanLine.style.opacity = '0';
+  faceBox.classList.remove('visible');
+}
+
+// Detect emotion
+btnDetect.addEventListener('click', async () => {
+  if (!cameraOn) return;
+
+  // Capture frame
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.save();
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, -canvas.width, 0);
+  ctx.restore();
+  const imageData = canvas.toDataURL('image/jpeg', 0.85);
+
+  // Show detecting state
+  btnDetect.disabled = true;
+  btnDetect.innerHTML = '<div class="spinner"></div> Analyzing...';
+  faceBox.classList.add('visible');
+
+  try {
+    const res = await fetch('/detect-emotion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: imageData })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      currentEmotion = data.emotion;
+      showEmotionResult(data.emotion, data.confidence, data.all_emotions);
+      await fetchRecommendations(data.emotion);
+    } else {
+      showToast('⚠️ Detection failed: ' + data.error);
+    }
+  } catch (e) {
+    showToast('⚠️ Server error. Is Flask running?');
+    console.error(e);
+  } finally {
+    btnDetect.disabled = false;
+    btnDetect.innerHTML = '<span>🔍</span> Detect Mood';
+  }
+});
+
+function showEmotionResult(emotion, confidence, allEmotions) {
+  const meta = EMOTIONS_META[emotion] || EMOTIONS_META.neutral;
+  document.getElementById('emotion-emoji').textContent = meta.emoji;
+  document.getElementById('emotion-name').textContent = emotion.charAt(0).toUpperCase() + emotion.slice(1);
+  document.getElementById('emotion-conf').textContent = `Confidence: ${confidence.toFixed(1)}%`;
+
+  // Bars
+  const barsEl = document.getElementById('emotion-bars');
+  barsEl.innerHTML = '';
+  const sorted = Object.entries(allEmotions).sort(([,a],[,b]) => b - a);
+  sorted.forEach(([em, val]) => {
+    const isMain = em === emotion;
+    const row = document.createElement('div');
+    row.className = 'emotion-bar-row';
+    row.innerHTML = `
+      <div class="emotion-bar-label" style="${isMain?'color:var(--text);font-weight:600;':''}">${em}</div>
+      <div class="emotion-bar-track">
+        <div class="emotion-bar-fill" style="width:0%;${isMain?'background:linear-gradient(90deg,'+meta.color+'99,'+meta.color+');':''}"></div>
+      </div>
+      <div class="emotion-bar-val">${val.toFixed(0)}%</div>`;
+    barsEl.appendChild(row);
+    requestAnimationFrame(() => {
+      row.querySelector('.emotion-bar-fill').style.width = Math.min(val, 100) + '%';
+    });
+  });
+
+  document.getElementById('emotion-result').classList.add('visible');
+}
+
+async function fetchRecommendations(emotion) {
+  const emptyEl = document.getElementById('recs-empty');
+  const loadingEl = document.getElementById('loading-recs');
+  const trackListEl = document.getElementById('track-list');
+  const moodTag = document.getElementById('recs-mood-tag');
+
+  emptyEl.style.display = 'none';
+  trackListEl.style.display = 'none';
+  loadingEl.classList.add('visible');
+
+  const meta = EMOTIONS_META[emotion] || EMOTIONS_META.neutral;
+  moodTag.textContent = meta.emoji + ' ' + meta.label;
+  moodTag.style.color = meta.color;
+  moodTag.style.borderColor = meta.color + '44';
+  moodTag.style.background = meta.color + '18';
+
+  try {
+    const res = await fetch('/get-recommendations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emotion })
+    });
+    const data = await res.json();
+
+    loadingEl.classList.remove('visible');
+
+    if (data.success && data.tracks.length > 0) {
+      renderTracks(data.tracks);
+      trackListEl.style.display = 'block';
+    } else {
+      emptyEl.style.display = 'flex';
+    }
+  } catch (e) {
+    loadingEl.classList.remove('visible');
+    emptyEl.style.display = 'flex';
+    console.error(e);
+  }
+}
+
+function renderTracks(tracks) {
+  const list = document.getElementById('track-list');
+  list.innerHTML = '';
+  tracks.forEach((track, i) => {
+    const a = document.createElement('a');
+    a.href = track.spotify_url || '#';
+    a.target = '_blank';
+    a.className = 'track-item';
+    a.innerHTML = `
+      <div>
+        <div class="track-num">${String(i+1).padStart(2,'0')}</div>
+        <div class="track-play">▶</div>
+      </div>
+      <div class="track-art">
+        ${track.image ? `<img src="${track.image}" alt="${track.name}" loading="lazy" onerror="this.style.display='none'">` : '🎵'}
+      </div>
+      <div class="track-info">
+        <div class="track-name">${track.name}</div>
+        <div class="track-artist">${track.artist}</div>
+      </div>
+      <div class="track-duration">${track.duration || ''}</div>`;
+    list.appendChild(a);
+  });
+}
+</script>
+</body>
+</html>
