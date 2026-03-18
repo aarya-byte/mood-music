@@ -1,15 +1,10 @@
-# Core web framework
-flask>=2.3.0
-
-# Emotion detection
+﻿flask>=2.3.0
 deepface>=0.0.79
 opencv-python-headless>=4.8.0
-tensorflow>=2.13.0
+tensorflow==2.15.0
 numpy>=1.24.0
-
-# Spotify integration
 spotipy>=2.23.0
-
-# Utilities
 python-dotenv>=1.0.0
 Pillow>=10.0.0
+gunicorn
+tf-keras
